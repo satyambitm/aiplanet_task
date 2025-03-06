@@ -23,7 +23,7 @@ os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
 
 def extract_text_from_pdf(pdf_path: str) -> str:
     """
-    Extract text content from a PDF file
+    Extract text content from a PDF file.
     """
     logger.info(f"Extracting text from PDF: {pdf_path}")
     
@@ -42,7 +42,7 @@ def extract_text_from_pdf(pdf_path: str) -> str:
 
 def process_document(pdf_path: str, document_id: str) -> None:
     """
-    Process a PDF document and create a vector store for it
+    Process a PDF document and create a vector store for it.
     """
     logger.info(f"Processing document: {document_id}")
     
@@ -60,14 +60,15 @@ def process_document(pdf_path: str, document_id: str) -> None:
         
         # Create vector store using Google's embeddings
         embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/gemini-1.5-flash"
+            model="models/embedding-001"  # ✅ Corrected model name
         )
+
         vector_store = FAISS.from_texts(chunks, embeddings)
-        
+
         # Save vector store
         vector_store_path = os.path.join(VECTOR_STORE_DIR, document_id)
         vector_store.save_local(vector_store_path)
-        
+
         logger.info(f"Document processed successfully: {document_id}")
     except Exception as e:
         logger.error(f"Error processing document: {str(e)}")
@@ -75,7 +76,7 @@ def process_document(pdf_path: str, document_id: str) -> None:
 
 def ask_question(pdf_path: str, question: str) -> str:
     """
-    Answer a question based on the content of a PDF document
+    Answer a question based on the content of a PDF document.
     """
     document_id = os.path.basename(pdf_path).split('.')[0]
     vector_store_path = os.path.join(VECTOR_STORE_DIR, document_id)
@@ -86,10 +87,18 @@ def ask_question(pdf_path: str, question: str) -> str:
     
     try:
         # Load vector store with Google's embeddings
-        embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001"
-        )
-        vector_store = FAISS.load_local(vector_store_path, embeddings,allow_dangerous_deserialization=True )
+        try:
+
+            embeddings = GoogleGenerativeAIEmbeddings(
+                model="models/gemini-1.5-flash"  # ✅ Corrected model name
+            )
+        
+            print("Embeddings model loaded successfully!")
+        except Exception as e:
+            print(f"Error: {e}")
+
+
+        vector_store = FAISS.load_local(vector_store_path, embeddings, allow_dangerous_deserialization=True)
         
         # Create retriever
         retriever = vector_store.as_retriever(
@@ -110,7 +119,7 @@ def ask_question(pdf_path: str, question: str) -> str:
         
         Answer:
         """
-        
+
         PROMPT = PromptTemplate(
             template=template,
             input_variables=["context", "question"]
@@ -120,7 +129,7 @@ def ask_question(pdf_path: str, question: str) -> str:
         
         # Use Gemini Pro model
         llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+            model="gemini-pro",  # ✅ Corrected model name
             temperature=0
         )
         
